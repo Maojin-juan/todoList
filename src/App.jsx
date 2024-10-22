@@ -1,155 +1,145 @@
 import React, { useState } from "react";
-import NewPage from "./NewPage"; // 引入 NewPage
+import {
+  Route,
+  Routes,
+  Navigate,
+  useNavigate, // 引入 useNavigate
+} from "react-router-dom";
+import axios from "axios";
+import TodoList from "./TodoList"; // 假設你已經有 TodoList 組件
 import "./App.css";
 
 const App = () => {
-  const [task, setTask] = useState("");
-  const [tasks, setTasks] = useState([]);
-  const [activeTab, setActiveTab] = useState("all"); // 新增狀態管理當前選中的選項卡
-  const [showNewPage, setShowNewPage] = useState(false); // 新增狀態控制顯示 NewPage
-  const [isDarkMode, setIsDarkMode] = useState(false); // 新增狀態控制主題顏色
+  const [token, setToken] = useState(null); // 用來儲存 JWT Token
+  const [error, setError] = useState(null); // 用來儲存錯誤信息
+  const [activeTab, setActiveTab] = useState("login"); // 用來控制當前選中的選項卡
 
-  const handleInputChange = (e) => {
-    setTask(e.target.value);
-  };
+  // 預設的登入和註冊信息
+  const defaultEmail = "example@gmail.com";
+  const defaultPassword = "example";
+  const defaultNickname = "毛巾捲";
 
-  const handleAddTask = () => {
-    if (task.trim() === "") return; // 不允許添加空任務
-    setTasks([...tasks, { text: task, completed: false }]);
-    setTask(""); // 清空輸入框
-  };
+  // 用於登入表單的狀態
+  const [loginEmail, setLoginEmail] = useState(defaultEmail);
+  const [loginPassword, setLoginPassword] = useState(defaultPassword);
 
-  const handleDeleteTask = (index) => {
-    const newTasks = tasks.filter((_, i) => i !== index);
-    setTasks(newTasks);
-  };
+  // 用於註冊表單的狀態
+  const [registerNickname, setRegisterNickname] = useState(defaultNickname);
+  const [registerEmail, setRegisterEmail] = useState(defaultEmail);
+  const [registerPassword, setRegisterPassword] = useState(defaultPassword);
 
-  const handleToggleTask = (index) => {
-    const newTasks = tasks.map((task, i) =>
-      i === index ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(newTasks);
-  };
+  const navigate = useNavigate(); // 使用 useNavigate 鉤子
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleAddTask();
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(
+        "https://todolist-api.hexschool.io/users/sign_in",
+        {
+          email: loginEmail,
+          password: loginPassword,
+        },
+      );
+      setToken(response.data.token); // 儲存 Token
+      setError(null); // 清除錯誤
+      navigate("/todolist"); // 登入成功後跳轉到 /todolist
+    } catch (err) {
+      setError(err.response.data.message); // 設置錯誤信息
     }
   };
 
-  // 根據當前選中的選項卡過濾任務
-  const filteredTasks = tasks.filter((task) => {
-    if (activeTab === "completed") return task.completed;
-    if (activeTab === "incomplete") return !task.completed;
-    return true; // 'all' 選項卡顯示所有任務
-  });
-
-  // 切換主題顏色
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+  const handleRegister = async () => {
+    try {
+      await axios.post("https://todolist-api.hexschool.io/users/sign_up", {
+        nickname: registerNickname, // 添加 nickname 欄位
+        email: registerEmail,
+        password: registerPassword,
+      });
+      alert("註冊成功！請登入。"); // 提示註冊成功
+    } catch (err) {
+      setError(err.response.data.message); // 設置錯誤信息
+    }
   };
 
   return (
-    <div
-      className={`flex flex-col items-center justify-center min-h-screen  ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-      }`}
-    >
-      <h1 className="text-3xl font-bold mb-4">To-Do List</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-3xl font-bold">待辦事項應用</h1>
+      {error && <div className="mb-4 text-red-500">{error}</div>}
 
-      {/* 切換主題的按鈕 */}
-      <button
-        onClick={toggleTheme}
-        className="mb-4 bg-yellow-500 text-white rounded-md p-2 hover:bg-yellow-600"
-      >
-        {isDarkMode ? "切換到白色模式" : "切換到黑色模式"}
-      </button>
+      {/* 選項卡 */}
+      <div className="mb-4">
+        <button
+          onClick={() => setActiveTab("login")}
+          className={`mr-2 ${activeTab === "login" ? "font-bold" : ""}`}
+        >
+          登入
+        </button>
+        <button
+          onClick={() => setActiveTab("register")}
+          className={`${activeTab === "register" ? "font-bold" : ""}`}
+        >
+          註冊
+        </button>
+      </div>
 
-      {/* 跳轉到新頁面的按鈕 */}
-      <button
-        onClick={() => setShowNewPage(!showNewPage)}
-        className="mb-4 bg-green-500 text-white rounded-md p-2 hover:bg-green-600"
-      >
-        {showNewPage ? "返回主頁" : "前往新頁面"}
-      </button>
-
-      {showNewPage ? ( // 根據狀態顯示 NewPage 或主頁內容
-        <NewPage />
-      ) : (
-        <>
-          {/* 選項卡 UI */}
-          <div className="mb-4">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`mr-2 ${activeTab === "all" ? "font-bold" : ""}`}
-            >
-              全部
-            </button>
-            <button
-              onClick={() => setActiveTab("incomplete")}
-              className={`mr-2 ${
-                activeTab === "incomplete" ? "font-bold" : ""
-              }`}
-            >
-              待完成
-            </button>
-            <button
-              onClick={() => setActiveTab("completed")}
-              className={`${activeTab === "completed" ? "font-bold" : ""}`}
-            >
-              已完成
-            </button>
-          </div>
-
-          <div className="flex mb-4">
-            <input
-              type="text"
-              value={task}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyPress} // 監聽 Enter 鍵
-              placeholder="輸入任務..."
-              className="border border-gray-300 rounded-l-md p-2 w-64"
-            />
-            <button
-              onClick={handleAddTask}
-              className="bg-blue-500 text-white rounded-r-md p-2 hover:bg-blue-600"
-            >
-              添加任務
-            </button>
-          </div>
-
-          <ul className="w-64">
-            {filteredTasks.map((task, index) => (
-              <li
-                key={index}
-                className="flex justify-between items-center border border-gray-300 rounded-md p-2 mb-2"
-              >
-                <div className="flex items-center">
+      <Routes>
+        <Route
+          path="/todolist"
+          element={token ? <TodoList token={token} /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/"
+          element={
+            <div>
+              {activeTab === "login" ? (
+                <div className="mb-4 flex flex-col gap-y-4">
+                  <h2>登入</h2>
                   <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => handleToggleTask(index)} // 點擊 checkbox 切換完成狀態
-                    className="mr-2 cursor-pointer"
+                    className="rounded-md border-2 p-2"
+                    type="email"
+                    placeholder="電子郵件"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)} // 更新狀態
                   />
-                  <span
-                    className={`${
-                      task.completed ? "line-through text-gray-400" : ""
-                    }`}
-                  >
-                    {task.text}
-                  </span>
+                  <input
+                    className="rounded-md border-2 p-2"
+                    type="password"
+                    placeholder="密碼"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)} // 更新狀態
+                  />
+                  <button onClick={handleLogin}>登入</button>
                 </div>
-                <button
-                  onClick={() => handleDeleteTask(index)}
-                  className="bg-red-500 text-white rounded-md px-2 hover:bg-red-600"
-                >
-                  刪除
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+              ) : (
+                <div className="mb-4 flex flex-col gap-y-4">
+                  <h2>註冊</h2>
+                  <input
+                    className="rounded-md border-2 p-2"
+                    type="text"
+                    placeholder="暱稱"
+                    value={registerNickname}
+                    onChange={(e) => setRegisterNickname(e.target.value)} // 更新狀態
+                  />
+                  <input
+                    className="rounded-md border-2 p-2"
+                    type="email"
+                    placeholder="電子郵件"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)} // 更新狀態
+                  />
+                  <input
+                    className="rounded-md border-2 p-2"
+                    type="password"
+                    placeholder="密碼"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)} // 更新狀態
+                  />
+                  <button onClick={handleRegister}>註冊</button>
+                </div>
+              )}
+            </div>
+          }
+        />
+      </Routes>
     </div>
   );
 };
