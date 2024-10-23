@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  Route,
-  Routes,
-  Navigate,
-  useNavigate, // 引入 useNavigate
-} from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import axios from "axios";
 import TodoList from "./TodoList"; // 假設你已經有 TodoList 組件
 import "./App.css";
@@ -28,8 +23,6 @@ const App = () => {
   const [registerEmail, setRegisterEmail] = useState(defaultEmail);
   const [registerPassword, setRegisterPassword] = useState(defaultPassword);
 
-  const navigate = useNavigate(); // 使用 useNavigate 鉤子
-
   const handleLogin = async () => {
     try {
       const response = await axios.post(
@@ -41,7 +34,6 @@ const App = () => {
       );
       setToken(response.data.token); // 儲存 Token
       setError(null); // 清除錯誤
-      navigate("/todolist"); // 登入成功後跳轉到 /todolist
     } catch (err) {
       setError(err.response.data.message); // 設置錯誤信息
     }
@@ -62,25 +54,6 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <h1 className="mb-4 text-3xl font-bold">待辦事項應用</h1>
-      {error && <div className="mb-4 text-red-500">{error}</div>}
-
-      {/* 選項卡 */}
-      <div className="mb-4">
-        <button
-          onClick={() => setActiveTab("login")}
-          className={`mr-2 ${activeTab === "login" ? "font-bold" : ""}`}
-        >
-          登入
-        </button>
-        <button
-          onClick={() => setActiveTab("register")}
-          className={`${activeTab === "register" ? "font-bold" : ""}`}
-        >
-          註冊
-        </button>
-      </div>
-
       <Routes>
         <Route
           path="/todolist"
@@ -89,8 +62,29 @@ const App = () => {
         <Route
           path="/"
           element={
-            <div>
-              {activeTab === "login" ? (
+            <div className="flex flex-col items-center">
+              <h1 className="mb-4 text-3xl font-bold">待辦事項應用</h1>
+              {error && <div className="mb-4 text-red-500">{error}</div>}
+
+              {/* 選項卡移動到這裡 */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setActiveTab("login")}
+                  className={`mr-2 ${activeTab === "login" ? "font-bold" : ""}`}
+                >
+                  登入
+                </button>
+                <button
+                  onClick={() => setActiveTab("register")}
+                  className={`${activeTab === "register" ? "font-bold" : ""}`}
+                >
+                  註冊
+                </button>
+              </div>
+
+              {token ? (
+                <Navigate to="/todolist" /> // 如果已經登入，直接導航到待辦事項頁面
+              ) : activeTab === "login" ? (
                 <div className="mb-4 flex flex-col gap-y-4">
                   <h2>登入</h2>
                   <input
